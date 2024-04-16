@@ -1,3 +1,6 @@
+//Used for cloud providers (they require an endpoint (GET) that they can hit and you respond OK
+//We use for check app for OK running
+
 package controllers
 
 import "net/http"
