@@ -23,8 +23,11 @@ type itemsService struct {
 }
 
 // implementing methods of the inteface
-func (s *itemsService) Create(items.Item) (*items.Item, rest_errors.RestErr) {
-	return nil, rest_errors.NewRestError("implement me!", http.StatusNotImplemented, "not_implemented", nil)
+func (s *itemsService) Create(item items.Item) (*items.Item, rest_errors.RestErr) {
+	if err := item.Save(); err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 func (s *itemsService) Get(string) (*items.Item, rest_errors.RestErr) {
 	return nil, rest_errors.NewRestError("implement me!", http.StatusNotImplemented, "not_implemented", nil)

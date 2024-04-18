@@ -31,6 +31,15 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 		httputils.RespondError(w, err)
 		return
 	}
+	// if we dont have accesstoken yet we are not able to use CallerId to validate userID
+
+	sellerId := oauth.GetCallerId(r)
+	if sellerId == 0 {
+		respErr := rest_errors.NewUnauthorizedError("invalid access token")
+		httputils.RespondError(w, respErr)
+		return
+	}
+
 	// if the accestoken valid and request = Ok
 	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -47,6 +56,7 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 		httputils.RespondError(w, respErr)
 		return
 	}
+
 	itemRequest.Seller = oauth.GetCallerId(r)
 
 	result, createErr := services.ItemsService.Create(itemRequest)
@@ -54,7 +64,6 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 		httputils.RespondError(w, createErr)
 		return
 	}
-	//TODO return created item as json with HTTP status 201 - Created
 
 	httputils.RespondJson(w, http.StatusCreated, result)
 
