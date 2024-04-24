@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/Skele878/bookstore_items-api/src/domain/items"
+	"github.com/Skele878/bookstore_items-api/src/domain/queries"
 	"github.com/Skele878/bookstore_items-api/src/services"
 	httputils "github.com/Skele878/bookstore_items-api/src/utils/http_utils"
 	"github.com/Skele878/bookstore_oauth-go/oauth"
 	"github.com/Skele878/bookstore_utils-go/rest_errors"
+	"github.com/gorilla/mux"
 )
 
 // creating public variable
@@ -20,6 +23,7 @@ var (
 type itemsControllerInterface interface {
 	Create(w http.ResponseWriter, r *http.Request)
 	Get(w http.ResponseWriter, r *http.Request)
+	Search(w http.ResponseWriter, r *http.Request)
 }
 
 type itemsController struct{}
@@ -69,4 +73,36 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {}
+func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	itemId := strings.TrimSpace(vars["id"])
+	item, err := services.ItemsService.Get(itemId)
+	if err != nil {
+		httputils.RespondError(w, err)
+		return
+	}
+	httputils.RespondJson(w, http.StatusOK, item)
+}
+
+func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
+	var query queries.EsQuery
+	bytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		apiErr := rest_errors.NewBadRequestError("invalid json body")
+		httputils.RespondError(w, apiErr)
+		return
+	}
+	defer r.Body.Close()
+	if err := json.Unmarshal(bytes, &query); err != nil {
+		apiErr := rest_errors.NewBadRequestError("invalid json body")
+		httputils.RespondError(w, apiErr)
+		return
+	}
+
+	items, searchErr := services.ItemsService.Search(query)
+	if searchErr != nil {
+		httputils.RespondError(w, searchErr)
+		return
+	}
+	httputils.RespondJson(w, http.StatusOK, items)
+}
